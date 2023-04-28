@@ -76,19 +76,19 @@ class ImuCamPose
 {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    ImuCamPose() {}
-    ImuCamPose(KeyFrame *pKF);
-    ImuCamPose(Frame *pF);
-    ImuCamPose(Eigen::Matrix3d &_Rwc, Eigen::Vector3d &_twc, KeyFrame *pKF);
+    ImuCamPose(){}
+    ImuCamPose(KeyFrame* pKF);
+    ImuCamPose(Frame* pF);
+    ImuCamPose(Eigen::Matrix3d &_Rwc, Eigen::Vector3d &_twc, KeyFrame* pKF);
 
     void SetParam(const std::vector<Eigen::Matrix3d> &_Rcw, const std::vector<Eigen::Vector3d> &_tcw, const std::vector<Eigen::Matrix3d> &_Rbc,
                     const std::vector<Eigen::Vector3d> &_tbc, const double &_bf);
 
     void Update(const double *pu);                                                   // update in the imu reference
     void UpdateW(const double *pu);                                                  // update in the world reference
-    Eigen::Vector2d Project(const Eigen::Vector3d &Xw, int cam_idx = 0) const;       // Mono
-    Eigen::Vector3d ProjectStereo(const Eigen::Vector3d &Xw, int cam_idx = 0) const; // Stereo
-    bool isDepthPositive(const Eigen::Vector3d &Xw, int cam_idx = 0) const;
+    Eigen::Vector2d Project(const Eigen::Vector3d &Xw, int cam_idx=0) const;       // Mono
+    Eigen::Vector3d ProjectStereo(const Eigen::Vector3d &Xw, int cam_idx=0) const; // Stereo
+    bool isDepthPositive(const Eigen::Vector3d &Xw, int cam_idx=0) const;
 
 public:
     // For IMU
@@ -101,7 +101,7 @@ public:
     std::vector<Eigen::Matrix3d> Rcb, Rbc;
     std::vector<Eigen::Vector3d> tcb, tbc;
     double bf;
-    std::vector<GeometricCamera *> pCamera;
+    std::vector<GeometricCamera*> pCamera;
 
     // For posegraph 4DoF
     Eigen::Matrix3d Rwb0;
@@ -116,7 +116,7 @@ class InvDepthPoint
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     InvDepthPoint() {}
-    InvDepthPoint(double _rho, double _u, double _v, KeyFrame *pHostKF);
+    InvDepthPoint(double _rho, double _u, double _v, KeyFrame* pHostKF);
 
     void Update(const double *pu);
 

@@ -1611,20 +1611,21 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
  * @param filename 文件名字，貌似调试用的
  */
 Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp, string filename)
-{
+{   cout << "IN the function grab rgbd" << endl;
+    mimLeft = imRGB.clone();
     mImGray = imRGB;
-    cv::Mat imDepth = imD;
+    mImDepth = imD.clone();
 
     // step 1：将RGB或RGBA图像转为灰度图像
     if(mImGray.channels()==3)
-    {
+    {   cout << "testing image channels found 3" << endl;
         if(mbRGB)
             cvtColor(mImGray,mImGray,cv::COLOR_RGB2GRAY);
         else
             cvtColor(mImGray,mImGray,cv::COLOR_BGR2GRAY);
     }
     else if(mImGray.channels()==4)
-    {
+    {   cout << "testing image channels found 4" << endl;
         if(mbRGB)
             cvtColor(mImGray,mImGray,cv::COLOR_RGBA2GRAY);
         else
@@ -1632,15 +1633,20 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
     }
 
     // Step 2 ：将深度相机的disparity转为Depth , 也就是转换成为真正尺度下的深度
-    if((fabs(mDepthMapFactor-1.0f)>1e-5) && imDepth.type()!=CV_32F)
-        imDepth.convertTo(imDepth,CV_32F,mDepthMapFactor);
-
+    if((fabs(mDepthMapFactor-1.0f)>1e-5) && mImDepth.type()!=CV_32F)
+        mImDepth.convertTo(mImDepth,CV_32F,mDepthMapFactor);
+    cout << "COnverting depth image to a cv 32f" << endl;
     // Step 3：构造Frame
     if (mSensor == System::RGBD)
-        mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
-    else if(mSensor == System::IMU_RGBD)
-        mCurrentFrame = Frame(mImGray,imDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
-
+    {
+        cout << "Sensor is RGBD passing to Frame with camera" << endl;
+        mCurrentFrame = Frame(mImGray,mImDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
+    }
+    else if(mSensor == System::IMU_RGBD){
+        cout << "Sensor is RGBD with imu passing to Frame with camera" << endl;
+    
+        mCurrentFrame = Frame(mImGray,mImDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
+    }
     mCurrentFrame.mNameFile = filename;
     mCurrentFrame.mnDataset = mnNumDataset;
 
@@ -1648,8 +1654,9 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
     vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
 #endif
     // Step 4：跟踪
+    cout << "Track" << endl;
     Track();
-
+    cout << "Track end" << endl;
     // 返回当前帧的位姿
     return mCurrentFrame.GetPose();
 }
@@ -1729,6 +1736,7 @@ Sophus::SE3f Tracking::GrabImageMonocular(const cv::Mat &im, const double &times
  */
 void Tracking::GrabImuData(const IMU::Point &imuMeasurement)
 {
+    cout << "GRAB IMU DATA" << endl;
     unique_lock<mutex> lock(mMutexImuQueue);
     mlQueueImuData.push_back(imuMeasurement);
 }
@@ -3043,6 +3051,12 @@ void Tracking::CreateInitialMapMonocular()
     }
 
     // Step 8 将关键帧插入局部地图，更新归一化后的位姿、局部地图点
+    if(mSensor==System::STEREO || mSensor==System::IMU_STEREO || mSensor==System::RGBD)
+    {
+        pKFcur->imLeftRgb = mimLeft.clone();
+        pKFcur->imRightRgb = mimRight.clone();
+        pKFcur->imDepth = mImDepth.clone();
+    }
     mpLocalMapper->InsertKeyFrame(pKFini);
     mpLocalMapper->InsertKeyFrame(pKFcur);
     mpLocalMapper->mFirstTs=pKFcur->mTimeStamp;
@@ -3128,6 +3142,11 @@ void Tracking::CreateMapInAtlas()
     mvIniMatches.clear();
     mlQueueImuData.clear();
 
+    if(mSensor==System::STEREO || mSensor==System::IMU_STEREO || mSensor==System::RGBD)
+    {
+        if (mpPointCloudMapping)
+            mpPointCloudMapping->Clear();
+    }
     mbCreatedMap = true;
 }
 
@@ -3962,6 +3981,15 @@ void Tracking::CreateNewKeyFrame()
 
     // Step 4：插入关键帧
     // 关键帧插入到列表 mlNewKeyFrames中，等待local mapping线程临幸
+    if(mSensor==System::STEREO || mSensor==System::IMU_STEREO || mSensor==System::RGBD)
+    {
+        // std::cout<<"mimLeft.empty()"<<mimLeft.empty()<<std::endl;
+        pKF->imLeftRgb = mimLeft.clone();
+        pKF->imRightRgb = mimRight.clone();
+        pKF->imDepth = mImDepth.clone();
+        // imshow("sss", pKF->imLeftRgb);
+        // cv::waitKey(1);
+    }
     mpLocalMapper->InsertKeyFrame(pKF);
 
     // 插入好了，允许局部建图停止
