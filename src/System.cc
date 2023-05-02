@@ -372,7 +372,7 @@ Sophus::SE3f System::TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, 
 }
 
 Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const double &timestamp, const vector<IMU::Point>& vImuMeas, string filename)
-{   cout << "I am at RGBD" << endl;
+{   //cout << "I am at RGBD" << endl;
     if(mSensor!=RGBD  && mSensor!=IMU_RGBD)
     {
         cerr << "ERROR: you called TrackRGBD but input sensor was not set to RGBD." << endl;
@@ -388,7 +388,7 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
 
         cv::resize(depthmap,imDepthToFeed,settings_->newImSize());
     }
-    cout << "AFTER resize" << endl;
+    //cout << "AFTER resize" << endl;
 
     // Check mode change
     {
@@ -396,7 +396,7 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
         
         if(mbActivateLocalizationMode)
         {
-            cout << "Localization Mode" << endl;
+            //cout << "Localization Mode" << endl;
             mpLocalMapper->RequestStop();
 
             // Wait until Local Mapping has effectively stopped
@@ -409,7 +409,7 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
             mbActivateLocalizationMode = false;
         }
         if(mbDeactivateLocalizationMode)
-        {   cout << "Desactivate Localization Mode" << endl;
+        {   //cout << "Desactivate Localization Mode" << endl;
             mpTracker->InformOnlyTracking(false);
             mpLocalMapper->Release();
             mbDeactivateLocalizationMode = false;
@@ -435,9 +435,9 @@ Sophus::SE3f System::TrackRGBD(const cv::Mat &im, const cv::Mat &depthmap, const
     if (mSensor == System::IMU_RGBD)
         for(size_t i_imu = 0; i_imu < vImuMeas.size(); i_imu++)
             mpTracker->GrabImuData(vImuMeas[i_imu]);
-    cout << "Grab Image RGBD" << endl;
+    //cout << "Grab Image RGBD" << endl;
     Sophus::SE3f Tcw = mpTracker->GrabImageRGBD(imToFeed,imDepthToFeed,timestamp,filename);
-    cout << "Grab Image end" << endl;
+    //cout << "Grab Image end" << endl;
     unique_lock<mutex> lock2(mMutexState);
     mTrackingState = mpTracker->mState;
     mTrackedMapPoints = mpTracker->mCurrentFrame.mvpMapPoints;
@@ -620,7 +620,6 @@ void System::Shutdown()
 
     if(!mStrSaveAtlasToFile.empty())
     {
-        std::cout << "开始保存地图" << std::endl;
         Verbose::PrintMess("Atlas saving to file " + mStrSaveAtlasToFile, Verbose::VERBOSITY_NORMAL);
         SaveAtlas(FileType::BINARY_FILE);
     }

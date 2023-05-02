@@ -23,6 +23,7 @@
 #include <opencv2/highgui/highgui.hpp>
 
 #include<mutex>
+#include<fstream>
 
 namespace ORB_SLAM3
 {
@@ -153,6 +154,10 @@ cv::Mat FrameDrawer::DrawFrame(float imageScale)
         mnTrackedVO=0;
         const float r = 5;
         int n = vCurrentKeys.size();
+
+        std::ofstream outfile;
+        outfile.open("keyPoints.txt", ios::app);
+
         for(int i=0;i<n;i++)
         {
             if(vbVO[i] || vbMap[i])

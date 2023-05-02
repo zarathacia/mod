@@ -105,7 +105,7 @@ void PointCloudMapping::generatePointCloud(KeyFrame *kf) //,Eigen::Isometry3d T
             if (d < 0.05 || d > 6)
                 continue;
             pcl::PointXYZRGBA p;
-            cout << "associating values" << endl;
+            //cout << "associating values" << endl;
             p.z = d;
             p.x = (n - kf->cx) * p.z / kf->fx;
             p.y = (m - kf->cy) * p.z / kf->fy;
@@ -113,10 +113,13 @@ void PointCloudMapping::generatePointCloud(KeyFrame *kf) //,Eigen::Isometry3d T
             p.b = kf->imLeftRgb.ptr<uchar>(m)[n * 3];
             p.g = kf->imLeftRgb.ptr<uchar>(m)[n * 3 + 1];
             p.r = kf->imLeftRgb.ptr<uchar>(m)[n * 3 + 2];
-            cout << p.x << " " << p.y << " " << p.z << endl;
+            //cout << p.x << " " << p.y << " " << p.z << endl;
             pPointCloud->points.push_back(p);
         }
-    }
+    }    
+    if (pPointCloud->points.size())
+        pcl::io::savePCDFileBinary("map_rgb.pcd", *pPointCloud);
+
     pPointCloud->height = 1;
     pPointCloud->width = pPointCloud->points.size();
     pPointCloud->is_dense = true;
@@ -157,7 +160,7 @@ void PointCloudMapping::viewer()
             }
 
         }
-        cout<<"here"<<endl;
+        //cout<<"here"<<endl;
         // timeval start, finish; //定义开始，结束变量
         //初始化
         // cout<<"待处理点云个数 = "<<N<<endl;
@@ -168,15 +171,14 @@ void PointCloudMapping::viewer()
                 continue;
             // gettimeofday(&start,NULL);
             generatePointCloud(pKF);
-            std::cout<<"I am generated POintCLoud "<<std::endl;
+            //std::cout<<"I am generated POintCLoud "<<std::endl;
             // gettimeofday(&finish,NULL);//初始化结束时间
             // generatePointCloudTime += finish.tv_sec - start.tv_sec + (finish.tv_usec - start.tv_usec)/1000000.0;
-
             // gettimeofday(&start,NULL);
             pcl::PointCloud<pcl::PointXYZRGBA>::Ptr p(new pcl::PointCloud<pcl::PointXYZRGBA>);
+            //Eigen::Matrix<double,4,4> Converter::toMatrix4d(const Sophus::SE3f &T)
             pcl::transformPointCloud(*(pKF->mptrPointCloud), *(p), Converter::toMatrix4d(pKF->GetPoseInverse()));
             {
-                std::cout<<"Converting to a Matrix4d "<<std::endl;
                 std::unique_lock<std::mutex> lck(mMutexGlobalMap);
                 std::cout<<"MutexGlobalMap "<<std::endl;
                 if (globalMap == nullptr) {
@@ -192,12 +194,12 @@ void PointCloudMapping::viewer()
                 if (p->size() > 0) {
                 cout<< p->size() <<endl;
                 } else {
+                    cout<< p->size() <<endl;
                 // The point cloud is empty
                 }
-                // Check the type of globalMap
+                // Check the type of globalMap Type of globalMap: N3pcl10PointCloudINS_12PointXYZRGBAEEE
                 std::cout << "Type of globalMap: " << typeid(*globalMap).name() << std::endl;
-
-                // Check the type of p
+                // Check the type of p Type of p: N3pcl10PointCloudINS_12PointXYZRGBAEEE
                 std::cout << "Type of p: " << typeid(*p).name() << std::endl;
                 *globalMap += *p;
                 std::cout<<"Added the point to the global map"<<std::endl;
@@ -208,7 +210,6 @@ void PointCloudMapping::viewer()
         // gettimeofday(&start,NULL);
         pcl::PointCloud<pcl::PointXYZRGBA>::Ptr tmp(new pcl::PointCloud<pcl::PointXYZRGBA>);
 
-        // 去除孤立点这个比较耗时，用处也不是很大，可以去掉
         // statistical_filter->setInputCloud(globalMap);  
         // statistical_filter->filter(*tmp);
         std::cout<<"tmp init"<<std::endl;
@@ -216,18 +217,30 @@ void PointCloudMapping::viewer()
         std::cout<<"Setting Input Cloud"<<std::endl;
         voxel->filter(*tmp);
         globalMap->swap( *tmp );
+        if (globalMap->size() > 0) {
+                cout<< globalMap->size() <<endl;
+                pcl::io::savePCDFile("result.pcd", *globalMap);
+                } else {
+                    
+                    cout<< globalMap->size() <<endl;
+                // The point cloud is empty
+                // Check the type of globalMap
+                }
         //voxel->filter(*globalMap);
-        // gettimeofday(&finish,NULL);//初始化结束时间
+        // gettimeofday(&finish,NULL);
         // double filter = finish.tv_sec - start.tv_sec + (finish.tv_usec - start.tv_usec)/1000000.0;//转换浮点型
         // std::cout<<"filter: "<<filter<<std::endl;
-        std::cout<<"Voxel Filter"<<std::endl;
+        //std::cout<<"Voxel Filter"<<std::endl;
         // std::cout<<"generatePointCloudTime: "<<generatePointCloudTime<<std::endl;
         // std::cout<<"transformPointCloudTime: "<<transformPointCloudTime<<std::endl;
         // gettimeofday(&start,NULL);
         std::cout<<"Before show global Map"<<std::endl;
-        viewer.showCloud(globalMap);  // 这个比较费时，建议不需要实时显示的可以屏蔽或改成几次显示一次
+        viewer.showCloud(globalMap);  
+            // loopbusy = true;
+        
+        cout << "in the viewer" << endl;
         std::cout<<"After show global Map"<<std::endl;
-        // gettimeofday(&finish,NULL);//初始化结束时间
+        // gettimeofday(&finish,NULL);
         // double duration = finish.tv_sec - start.tv_sec + (finish.tv_usec - start.tv_usec)/1000000.0;//转换浮点型
         // std::cout<<"showCloud: "<<duration<<std::endl;
     }
@@ -246,20 +259,20 @@ void PointCloudMapping::updatecloud(Map &curMap)
     
     mabIsUpdating = true;
     currentvpKFs = curMap.GetAllKeyFrames();
-    // loopbusy = true;
-    cout << "开始点云更新" << endl;
+    cout << "Start point cloud update" << endl;
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr tmpGlobalMap(new pcl::PointCloud<pcl::PointXYZRGBA>);
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr curPointCloud(new pcl::PointCloud<pcl::PointXYZRGBA>);
     pcl::PointCloud<pcl::PointXYZRGBA>::Ptr tmpGlobalMapFilter(new pcl::PointCloud<pcl::PointXYZRGBA>());
+    cout << "Here1" << endl;
     for (int i = 0; i < currentvpKFs.size(); i++)
     {
         if (!mabIsUpdating)
-        {
+        {   cout << "Here2" << endl;
             std::cout << "中断点云更新" <<std::endl;
             return;
         }
         if (!currentvpKFs[i]->isBad() && currentvpKFs[i]->mptrPointCloud)
-        {
+        {   cout << "Here3" << endl;
             
             pcl::transformPointCloud(
                 *(currentvpKFs[i]->mptrPointCloud), *(curPointCloud),

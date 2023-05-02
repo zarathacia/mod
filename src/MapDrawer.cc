@@ -22,6 +22,10 @@
 #include <pangolin/pangolin.h>
 #include <mutex>
 
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <pcl/io/pcd_io.h>
+
 namespace ORB_SLAM3
 {
 
@@ -150,13 +154,23 @@ void MapDrawer::DrawMapPoints()
     glBegin(GL_POINTS);
     glColor3f(0.0,0.0,0.0);
 
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_saved(new pcl::PointCloud<pcl::PointXYZ>());
     for(size_t i=0, iend=vpMPs.size(); i<iend;i++)
     {
         if(vpMPs[i]->isBad() || spRefMPs.count(vpMPs[i]))
             continue;
         Eigen::Matrix<float,3,1> pos = vpMPs[i]->GetWorldPos();
         glVertex3f(pos(0),pos(1),pos(2));
+        pcl::PointXYZ p;
+        p.x = pos(0);
+        p.y = pos(1);
+        p.z = pos(2);
+        cloud_saved->points.push_back(p);
     }
+    if (cloud_saved->points.size())
+        //for each new point he ads it to the file
+        pcl::io::savePCDFileBinary("map.pcd", *cloud_saved);
+
     glEnd();
 
     glPointSize(mPointSize);

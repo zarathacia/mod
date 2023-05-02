@@ -75,9 +75,9 @@ int main(int argc, char **argv)
     for(int ni=0; ni<nImages; ni++)
     {
         // Read image and depthmap from file
-        cout << "Reading the rgb image" << endl;
+        //cout << "Reading the rgb image" << endl;
         imRGB = cv::imread(string(argv[3])+"/"+vstrImageFilenamesRGB[ni],cv::IMREAD_UNCHANGED); //,cv::IMREAD_UNCHANGED);
-        cout << "Reading the depth image" << endl;
+        //cout << "Reading the depth image" << endl;
         imD = cv::imread(string(argv[3])+"/"+vstrImageFilenamesD[ni],cv::IMREAD_UNCHANGED); //,cv::IMREAD_UNCHANGED);
         double tframe = vTimestamps[ni];
 
@@ -101,7 +101,7 @@ int main(int argc, char **argv)
 #else
         std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
 #endif
-        cout << "I am at tracking" << endl;
+        //cout << "I am at tracking" << endl;
         // Pass the image to the SLAM system
         SLAM.TrackRGBD(imRGB,imD,tframe);
 

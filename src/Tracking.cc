@@ -1611,21 +1611,21 @@ Sophus::SE3f Tracking::GrabImageStereo(const cv::Mat &imRectLeft, const cv::Mat 
  * @param filename 文件名字，貌似调试用的
  */
 Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, const double &timestamp, string filename)
-{   cout << "IN the function grab rgbd" << endl;
+{   //cout << "IN the function grab rgbd" << endl;
     mimLeft = imRGB.clone();
     mImGray = imRGB;
     mImDepth = imD.clone();
 
     // step 1：将RGB或RGBA图像转为灰度图像
     if(mImGray.channels()==3)
-    {   cout << "testing image channels found 3" << endl;
+    {   //cout << "testing image channels found 3" << endl;
         if(mbRGB)
             cvtColor(mImGray,mImGray,cv::COLOR_RGB2GRAY);
         else
             cvtColor(mImGray,mImGray,cv::COLOR_BGR2GRAY);
     }
     else if(mImGray.channels()==4)
-    {   cout << "testing image channels found 4" << endl;
+    {   //cout << "testing image channels found 4" << endl;
         if(mbRGB)
             cvtColor(mImGray,mImGray,cv::COLOR_RGBA2GRAY);
         else
@@ -1635,15 +1635,15 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
     // Step 2 ：将深度相机的disparity转为Depth , 也就是转换成为真正尺度下的深度
     if((fabs(mDepthMapFactor-1.0f)>1e-5) && mImDepth.type()!=CV_32F)
         mImDepth.convertTo(mImDepth,CV_32F,mDepthMapFactor);
-    cout << "COnverting depth image to a cv 32f" << endl;
+    //cout << "COnverting depth image to a cv 32f" << endl;
     // Step 3：构造Frame
     if (mSensor == System::RGBD)
     {
-        cout << "Sensor is RGBD passing to Frame with camera" << endl;
+        //cout << "Sensor is RGBD passing to Frame with camera" << endl;
         mCurrentFrame = Frame(mImGray,mImDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera);
     }
     else if(mSensor == System::IMU_RGBD){
-        cout << "Sensor is RGBD with imu passing to Frame with camera" << endl;
+        //cout << "Sensor is RGBD with imu passing to Frame with camera" << endl;
     
         mCurrentFrame = Frame(mImGray,mImDepth,timestamp,mpORBextractorLeft,mpORBVocabulary,mK,mDistCoef,mbf,mThDepth,mpCamera,&mLastFrame,*mpImuCalib);
     }
@@ -1654,9 +1654,9 @@ Sophus::SE3f Tracking::GrabImageRGBD(const cv::Mat &imRGB,const cv::Mat &imD, co
     vdORBExtract_ms.push_back(mCurrentFrame.mTimeORB_Ext);
 #endif
     // Step 4：跟踪
-    cout << "Track" << endl;
+    //cout << "Track" << endl;
     Track();
-    cout << "Track end" << endl;
+    //cout << "Track end" << endl;
     // 返回当前帧的位姿
     return mCurrentFrame.GetPose();
 }
